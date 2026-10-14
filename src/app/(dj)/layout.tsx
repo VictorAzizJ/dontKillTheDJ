@@ -31,7 +31,7 @@ async function DjHeader() {
             href="/dashboard"
             className="text-sm font-medium tracking-[0.18em] text-cyan uppercase"
           >
-            CrowdControl
+            Don&apos;t Kill the DJ
           </Link>
           <span className="text-muted-foreground hidden text-sm sm:inline">
             {djProfile.stageName}
@@ -62,7 +62,7 @@ function DjHeaderFallback() {
     <header className="border-b border-white/10 bg-surface/80">
       <div className="mx-auto flex w-full max-w-5xl items-center px-4 py-3">
         <span className="text-sm font-medium tracking-[0.18em] text-cyan uppercase">
-          CrowdControl
+          Don&apos;t Kill the DJ
         </span>
       </div>
     </header>

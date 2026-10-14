@@ -25,7 +25,7 @@ export default function LoginPage({
       />
       <div className="relative z-10 w-full max-w-md">
         <p className="mb-6 text-center text-sm font-medium tracking-[0.2em] text-cyan uppercase">
-          CrowdControl
+          Don&apos;t Kill the DJ
         </p>
         <Suspense fallback={<LoginCardFallback />}>
           <LoginGate searchParams={searchParams} />

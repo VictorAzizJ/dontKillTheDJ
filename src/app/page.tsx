@@ -10,7 +10,7 @@ export default function Home() {
       />
       <div className="relative z-10 flex max-w-lg flex-col items-center gap-6 text-center">
         <p className="text-sm font-medium tracking-[0.2em] text-cyan uppercase">
-          CrowdControl
+          Don&apos;t Kill the DJ
         </p>
         <h1 className="text-4xl font-semibold tracking-tight text-foreground sm:text-5xl">
           Keep the floor moving. Don&apos;t kill the DJ.

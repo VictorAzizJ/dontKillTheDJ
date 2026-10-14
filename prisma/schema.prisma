@@ -1,4 +1,4 @@
-// CrowdControl — events, song requests, and live crowd temperature.
+// Don't Kill the DJ — events, song requests, and live crowd temperature.
 
 generator client {
   provider = "prisma-client-js"

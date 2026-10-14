@@ -6,7 +6,7 @@ export type SmsCommand =
   | { type: "feedback"; text: string };
 
 export const SMS_HELP =
-  "CrowdControl: text HOT, COLD, or 1-5. REQUEST Title - Artist. Or say how the room feels. JOIN event-code if more than one session is live.";
+  "Don't Kill the DJ: text HOT, COLD, or 1-5. REQUEST Title - Artist. Or say how the room feels. JOIN event-code if more than one session is live.";
 
 export function parseSmsCommand(body: string): SmsCommand {
   const text = body.replace(/\s+/g, " ").trim();

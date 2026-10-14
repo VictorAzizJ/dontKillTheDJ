@@ -13,7 +13,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: "CrowdControl",
+  title: "Don't Kill the DJ",
   description: "Live song requests and crowd energy for DJs",
 };
 

@@ -1,4 +1,4 @@
-# CrowdControl
+# Don't Kill the DJ
 
 Live song requests and crowd energy for DJs. Dark nightlife UI, PostgreSQL + Prisma, Auth.js credentials for the DJ dashboard.
 

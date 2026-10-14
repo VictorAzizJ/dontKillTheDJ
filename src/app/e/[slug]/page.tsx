@@ -42,7 +42,7 @@ async function PublicEventContent({
 
       <main className="relative z-10 mx-auto flex w-full max-w-lg flex-1 flex-col px-4 pt-8 pb-10">
         <p className="text-xs font-medium tracking-[0.2em] text-cyan uppercase">
-          CrowdControl
+          Don&apos;t Kill the DJ
         </p>
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
