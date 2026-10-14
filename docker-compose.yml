@@ -1,0 +1,21 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: crowdcontrol-postgres
+    restart: unless-stopped
+    ports:
+      - "5432:5432"
+    environment:
+      POSTGRES_USER: crowdcontrol
+      POSTGRES_PASSWORD: crowdcontrol
+      POSTGRES_DB: crowdcontrol
+    volumes:
+      - crowdcontrol_pg_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U crowdcontrol -d crowdcontrol"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+volumes:
+  crowdcontrol_pg_data:

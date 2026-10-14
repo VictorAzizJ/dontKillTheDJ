@@ -1,0 +1,272 @@
+// CrowdControl — events, song requests, and live crowd temperature.
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum EventStatus {
+  DRAFT
+  LIVE
+  PAUSED
+  ENDED
+}
+
+enum SongRequestStatus {
+  REQUESTED
+  TRENDING
+  ACCEPTED
+  PLAYED
+  DECLINED
+}
+
+enum RequestSource {
+  WEB
+  SMS
+  VOICE
+}
+
+enum TipStatus {
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+}
+
+enum TipKind {
+  TIP
+  PRIORITY_REQUEST
+}
+
+enum CrowdSignalSource {
+  WEB
+  SMS_KEYWORD
+  SMS_AGENT
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String?
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  djProfile    DJProfile?
+}
+
+model DJProfile {
+  id        String   @id @default(cuid())
+  userId    String   @unique
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  stageName String
+  bio       String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+  ratings   DJRating[]
+}
+
+model Venue {
+  id        String   @id @default(cuid())
+  name      String
+  address   String?
+  city      String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+}
+
+model Event {
+  id           String             @id @default(cuid())
+  name         String
+  slug         String             @unique
+  status       EventStatus        @default(DRAFT)
+  venueId      String
+  venue        Venue              @relation(fields: [venueId], references: [id])
+  djProfileId  String
+  djProfile    DJProfile          @relation(fields: [djProfileId], references: [id])
+  startedAt    DateTime?
+  endedAt      DateTime?
+  createdAt    DateTime           @default(now())
+  updatedAt    DateTime           @updatedAt
+  participants EventParticipant[]
+  songRequests SongRequest[]
+  vibeVotes    VibeVote[]
+  ratings      DJRating[]
+  tips         Tip[]
+  twilioMessages TwilioMessage[]
+  voiceInteractions VoiceInteraction[]
+  activities   EventActivity[]
+  crowdSignals CrowdSignal[]
+}
+
+model EventParticipant {
+  id           String   @id @default(cuid())
+  eventId      String
+  event        Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  /// Anonymous web client token (cookie / localStorage). Mutually exclusive with phoneE164 until verified merge.
+  sessionToken String?
+  /// E.164 phone from SMS/voice. Never merge with sessionToken without verification.
+  phoneE164    String?
+  displayLabel String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  songRequests SongRequest[]
+  songVotes    SongVote[]
+  vibeVotes    VibeVote[]
+  ratings      DJRating[]
+  tips         Tip[]
+  crowdSignals CrowdSignal[]
+
+  @@unique([eventId, sessionToken])
+  @@unique([eventId, phoneE164])
+  @@index([eventId])
+}
+
+model SongRequest {
+  id             String            @id @default(cuid())
+  eventId        String
+  event          Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId  String?
+  participant    EventParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  title          String
+  artist         String
+  note           String?
+  /// lowercased, punctuation-stripped `title|artist` for dedupe within an event
+  normalizedKey  String
+  status         SongRequestStatus @default(REQUESTED)
+  source         RequestSource     @default(WEB)
+  isPriority     Boolean           @default(false)
+  voteCount      Int               @default(1)
+  createdAt      DateTime          @default(now())
+  updatedAt      DateTime          @updatedAt
+  votes          SongVote[]
+  tips           Tip[]
+
+  @@unique([eventId, normalizedKey])
+  @@index([eventId, status])
+  @@index([eventId, createdAt])
+}
+
+model SongVote {
+  id            String           @id @default(cuid())
+  songRequestId String
+  songRequest   SongRequest      @relation(fields: [songRequestId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  createdAt     DateTime         @default(now())
+
+  @@unique([songRequestId, participantId])
+  @@index([songRequestId])
+}
+
+model VibeVote {
+  id            String           @id @default(cuid())
+  eventId       String
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  score         Int
+  createdAt     DateTime         @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([participantId, createdAt])
+}
+
+model DJRating {
+  id            String           @id @default(cuid())
+  eventId       String
+  event         Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  djProfileId   String
+  djProfile     DJProfile        @relation(fields: [djProfileId], references: [id], onDelete: Cascade)
+  participantId String
+  participant   EventParticipant @relation(fields: [participantId], references: [id], onDelete: Cascade)
+  stars         Int
+  createdAt     DateTime         @default(now())
+
+  @@unique([eventId, participantId])
+  @@index([djProfileId])
+}
+
+model Tip {
+  id              String           @id @default(cuid())
+  eventId         String
+  event           Event            @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId   String?
+  participant     EventParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  songRequestId   String?
+  songRequest     SongRequest?     @relation(fields: [songRequestId], references: [id], onDelete: SetNull)
+  kind            TipKind          @default(TIP)
+  amountCents     Int
+  currency        String           @default("usd")
+  status          TipStatus        @default(PENDING)
+  stripeSessionId String?          @unique
+  stripePaymentId String?          @unique
+  createdAt       DateTime         @default(now())
+  updatedAt       DateTime         @updatedAt
+
+  @@index([eventId, status])
+}
+
+model TwilioMessage {
+  id          String   @id @default(cuid())
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  messageSid  String   @unique
+  fromPhone   String
+  toPhone     String
+  body        String
+  direction   String
+  replyBody   String?
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+}
+
+/// One crowd reading. Energy and sentiment stay separate so a loud complaint does not look like applause.
+model CrowdSignal {
+  id            String            @id @default(cuid())
+  eventId       String
+  event         Event             @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  participantId String?
+  participant   EventParticipant? @relation(fields: [participantId], references: [id], onDelete: SetNull)
+  source        CrowdSignalSource
+  /// keyword, lexicon, model, or vote
+  reader        String
+  energy        Float
+  sentiment     Float
+  label         String?
+  createdAt     DateTime          @default(now())
+
+  @@index([eventId, createdAt])
+  @@index([participantId, createdAt])
+}
+
+model VoiceInteraction {
+  id          String   @id @default(cuid())
+  eventId     String?
+  event       Event?   @relation(fields: [eventId], references: [id], onDelete: SetNull)
+  callSid     String   @unique
+  fromPhone   String
+  toPhone     String
+  digits      String?
+  speechResult String?
+  createdAt   DateTime @default(now())
+
+  @@index([eventId])
+}
+
+model EventActivity {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  type      String
+  payload   Json?
+  createdAt DateTime @default(now())
+
+  @@index([eventId, createdAt])
+}
